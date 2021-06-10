@@ -17,6 +17,9 @@ def handle_data(csv_file):
 
     y_pred = svclassifier.predict(X_test)
 
-    print(skl.metrics.plot_confusion_matrix(svclassifier, X_test, y_test))
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8, 6), dpi=300)
+
+    print(skl.metrics.plot_confusion_matrix(svclassifier, X_test, y_test, cmap=plt.cm.get_cmap("Blues"),
+                                            normalize="true", ax=axes))
     print(skl.metrics.classification_report(y_test, y_pred))
     plt.show()
