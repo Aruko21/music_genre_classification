@@ -13,7 +13,7 @@ class AudioProcessing:
 
     def __init__(self, filepath, sample_rate=None, duration=None, offset=None):
         # sr=None for native sample rate from file
-        # Если указать, или использовать значение по умолчанию (22050) - то произодйет resample
+        # Если указать, или использовать значение по умолчанию (22050) - то произойдет resample
         signal, sr = librosa.load(path=filepath, mono=True, duration=duration, offset=offset, sr=sample_rate)
         self.filename = filepath.split("/")[-1]
         self._signal = signal
@@ -79,6 +79,10 @@ class AudioProcessing:
             self._mel_upd = False
 
         return self._mfcc
+
+    def get_tempo(self):
+        tempo = librosa.beat.tempo(self._signal, sr=self._sr)
+        return tempo[0]
 
     @staticmethod
     def get_mfcc_delta(mfcc):

@@ -43,6 +43,17 @@ class AudioFeatures:
 
         return result
 
+    def get_rhythm(self):
+        tempo = self.audio_proc.get_tempo()
+
+        result = {}
+
+        tempo_key = "tempo"
+
+        result[tempo_key] = tempo
+
+        return result
+
 
 class FeaturesCSVWriter:
     def __init__(self, filename):
