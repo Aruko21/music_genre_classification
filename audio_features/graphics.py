@@ -4,6 +4,7 @@ import librosa.display
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import sklearn as skl
 
 from .processing import AudioProcessing
 
@@ -139,6 +140,42 @@ class AudioPlots:
         fig.suptitle(name)
 
         axes.plot(np.arange(1, len(mfccs) + 1), mfccs, linestyle="-", marker='o')
+        plt.show()
+
+        if self.save_file:
+            fig.savefig(os.path.join(self.save_loc, name), dpi=self.dpi)
+
+
+class MLPlots:
+    def __init__(self, dpi=200, save_file=False, name=None):
+        self.dpi = dpi
+        self.save_file = save_file
+        self.name = name
+        self.filename = "_".join(name.split("."))
+        self.save_loc = SAVE_IMG_LOCATION
+
+    def plot_confusion_matrix(self, genreclassifier, name):
+        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8, 6), dpi=300)
+
+        skl.metrics.plot_confusion_matrix(genreclassifier.classifier, genreclassifier.X_test, genreclassifier.y_test,
+                                          cmap=plt.cm.get_cmap("Blues"), normalize="true", ax=axes)
+
+        plt.show()
+
+        if self.save_file:
+            fig.savefig(os.path.join(self.save_loc, name), dpi=self.dpi)
+
+    def plot_comparison(self, data, x_len, name):
+        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8, 6), dpi=300)
+        fig.suptitle(name)
+
+        for label, y_data in data.items():
+            axes.plot(np.arange(1, x_len + 1), y_data, linestyle="-", marker='o', label=label)
+
+        axes.legend(loc='upper right')
+        axes.set_ylabel("F1-Measure Score")
+        axes.set_xlabel("Attempts")
+        axes.grid()
         plt.show()
 
         if self.save_file:

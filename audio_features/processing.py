@@ -84,6 +84,10 @@ class AudioProcessing:
         tempo = librosa.beat.tempo(self._signal, sr=self._sr)
         return tempo[0]
 
+    def get_harmonics_change(self):
+        harmonics_change = librosa.feature.tonnetz(self._signal, sr=self._sr)
+        return harmonics_change
+
     @staticmethod
     def get_mfcc_delta(mfcc):
         return librosa.feature.delta(mfcc)

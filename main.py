@@ -1,7 +1,10 @@
 import os
 import sys
+import sklearn as skl
+import numpy as np
 import pandas as pd
 import audio_features as af
+from multiprocessing import Pool
 
 SAVE_FILE = True
 
@@ -65,6 +68,20 @@ def piano_demo(filepath):
     return features
 
 
+def file_handle(filename):
+    # filename = files[i]
+
+    audio_proc = af.AudioProcessing(filename)
+    audio_features = af.AudioFeatures(audio_proc)
+
+    features = audio_features.get_mfccs(n_mfcc=13, n_mels=88, delta=True, stat_funcs=("mean", "median", "square",))
+    # features.update(audio_features.get_rhythm())
+    # features.update(audio_features.get_harmonic_change(stat_funcs=("mean", "median", "square",)))
+
+    return features, filename
+
+
+
 def main():
     # sound_envelope_demo(MOCK_FILES.get("piano_c"), MOCK_FILES.get("violin_c"))
     # piano_features = piano_demo(MOCK_FILES.get("piano_sample"))
@@ -93,20 +110,50 @@ def main():
     print("test: ", af.get_audios_by_genre("gtzan", "blues"))
     for genre in gtzan_genres[:]:
         print("processing '{}' genre...".format(genre))
-        for file in af.get_audios_by_genre("gtzan", genre)[:]:
-            audio_proc = af.AudioProcessing(file)
-            audio_features = af.AudioFeatures(audio_proc)
 
-            features = audio_features.get_mfccs(n_mfcc=13, n_mels=176, delta=True, stat_funcs=("mean", "median", "square",))
-            features.update(audio_features.get_rhythm())
-            csv_writer.append_audio(file.split("/")[-1], features, genre)
+        files = af.get_audios_by_genre("gtzan", genre)[:]
+
+        pool = Pool()
+        result = pool.map(file_handle, files)
+
+        for entry in result:
+            filename = entry[1]
+            features = entry[0]
+            csv_writer.append_audio(filename.split("/")[-1], features, genre)
 
     csv_writer.generate_csv()
 
-    # data = pd.read_csv("gtzan_features.csv")
+    ml_plots = af.MLPlots(name="test_ml")
+    classifier = af.GenreClassifier(skl.svm.SVC(kernel='linear'), "gtzan_features.csv", random_state=10)
+    classifier.train()
+    y_pred = classifier.predict()
+    classifier.print_report(y_pred)
+    print(classifier.get_f1_score(y_pred))
+    ml_plots.plot_confusion_matrix(classifier, "What")
 
-    af.handle_data("gtzan_features.csv")
+    # ml_plots = af.MLPlots(name="test_ml")
+    # attempts = 100
+    # f1_scores = {
+    #     "Stratified dataset": [],
+    #     "Nonstratified dataset": []
+    # }
+    #
+    # for i in range(attempts):
+    #     print("{} of {} attempts computing...".format(i + 1, attempts))
+    #     classifier = af.GenreClassifier(skl.svm.SVC(kernel='linear'), "gtzan_features.csv")
+    #     classifier.train()
+    #     y_pred = classifier.predict()
+    #     f1_scores["Stratified dataset"].append(classifier.get_f1_score(y_pred))
+    #
+    #     classifier_withoutstr = af.GenreClassifier(skl.svm.SVC(kernel='linear'), "gtzan_features.csv", stratify=False)
+    #     classifier_withoutstr.train()
+    #     y_pred = classifier_withoutstr.predict()
+    #     f1_scores["Nonstratified dataset"].append(classifier_withoutstr.get_f1_score(y_pred))
+    #
+    # ml_plots.plot_comparison(f1_scores, x_len=attempts, name="Data set splitting methods comparison")
+    # print("non stratified mean: ", np.mean(f1_scores["Nonstratified dataset"]))
+    # print("stratified mean: ", np.mean(f1_scores["Stratified dataset"]))
 
 
-
-main()
+if __name__ == "__main__":
+    main()

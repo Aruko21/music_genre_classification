@@ -3,23 +3,45 @@ import sklearn as skl
 import matplotlib.pyplot as plt
 
 
-def handle_data(csv_file):
-    cols = list(pd.read_csv(csv_file, nrows=1))
-    data = pd.read_csv(csv_file, usecols=[i for i in cols if i not in ("filename",)])
+class GenreClassifier:
+    def __init__(self, classifier, csv_file=None, test_size=0.20, random_state=None, stratify=True):
+        self.classifier = classifier
+        self.csv_file = csv_file
 
-    audio_features = data.drop('label', axis=1)
-    labels = data["label"]
+        self.X_train = None
+        self.X_test = None
+        self.y_train = None
+        self.y_test = None
 
-    X_train, X_test, y_train, y_test = skl.model_selection.train_test_split(audio_features, labels, test_size=0.20, random_state=18)
+        if csv_file is not None:
+            self.upload_data(csv_file, test_size, random_state, stratify)
 
-    svclassifier = skl.svm.SVC(kernel='linear')
-    svclassifier.fit(X_train, y_train)
+    def upload_data(self, csv_file, test_size=0.20, random_state=None, stratify=True):
+        headers = list(pd.read_csv(csv_file, nrows=1))
+        data = pd.read_csv(csv_file, usecols=[entry for entry in headers if entry not in ("filename",)])
+        audio_features = data.drop('label', axis=1)
+        labels = data["label"]
 
-    y_pred = svclassifier.predict(X_test)
+        if stratify:
+            stratify_set = labels
+        else:
+            stratify_set = None
 
-    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8, 6), dpi=300)
+        self.X_train, self.X_test, self.y_train, self.y_test = skl.model_selection.train_test_split(
+            audio_features, labels, test_size=test_size, random_state=random_state, stratify=stratify_set
+        )
 
-    print(skl.metrics.plot_confusion_matrix(svclassifier, X_test, y_test, cmap=plt.cm.get_cmap("Blues"),
-                                            normalize="true", ax=axes))
-    print(skl.metrics.classification_report(y_test, y_pred))
-    plt.show()
+    def train(self):
+        if self.X_train is None or self.X_test is None or self.y_train is None or self.y_test is None:
+            raise ValueError("Upload data before training the model")
+        self.classifier.fit(self.X_train, self.y_train)
+
+    def predict(self):
+        y_pred = self.classifier.predict(self.X_test)
+        return y_pred
+
+    def print_report(self, y_pred):
+        print(skl.metrics.classification_report(self.y_test, y_pred))
+
+    def get_f1_score(self, y_pred):
+        return skl.metrics.f1_score(self.y_test, y_pred, average='weighted')

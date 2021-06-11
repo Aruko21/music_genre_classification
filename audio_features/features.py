@@ -45,12 +45,25 @@ class AudioFeatures:
 
     def get_rhythm(self):
         tempo = self.audio_proc.get_tempo()
-
         result = {}
 
         tempo_key = "tempo"
-
         result[tempo_key] = tempo
+
+        return result
+
+    def get_harmonic_change(self, stat_funcs=("mean",)):
+        features = self.audio_proc.get_harmonics_change()
+
+        result = {}
+        for func in stat_funcs:
+            stat_func = self.stat_funcs.get(func)
+            if stat_func is None:
+                raise ValueError("There is no '{}' statistic function".format(func))
+
+            harm_change_key = "_".join(["harm_change", func])
+
+            result[harm_change_key] = stat_func(features, axis=1)
 
         return result
 
