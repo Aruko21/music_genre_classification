@@ -155,10 +155,12 @@ class MLPlots:
         self.save_loc = SAVE_IMG_LOCATION
 
     def plot_confusion_matrix(self, genreclassifier, name):
-        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8, 6), dpi=300)
+        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8, 7), dpi=300)
 
         skl.metrics.plot_confusion_matrix(genreclassifier.classifier, genreclassifier.X_test, genreclassifier.y_test,
-                                          cmap=plt.cm.get_cmap("Blues"), normalize="true", ax=axes)
+                                          cmap=plt.cm.get_cmap("Blues"), normalize="true", xticks_rotation="45",
+                                          ax=axes)
+        axes.set_title(name)
 
         plt.show()
 

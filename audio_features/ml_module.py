@@ -6,21 +6,28 @@ import matplotlib.pyplot as plt
 class GenreClassifier:
     def __init__(self, classifier, csv_file=None, test_size=0.20, random_state=None, stratify=True):
         self.classifier = classifier
-        self.csv_file = csv_file
+        self.labels = None
+
+        features_filename = csv_file
+        if csv_file is not None and csv_file.split(".")[-1] != "csv":
+            features_filename += ".csv"
+
+        self.csv_file = features_filename
 
         self.X_train = None
         self.X_test = None
         self.y_train = None
         self.y_test = None
 
-        if csv_file is not None:
-            self.upload_data(csv_file, test_size, random_state, stratify)
+        if self.csv_file is not None:
+            self.upload_data(self.csv_file, test_size, random_state, stratify)
 
     def upload_data(self, csv_file, test_size=0.20, random_state=None, stratify=True):
         headers = list(pd.read_csv(csv_file, nrows=1))
         data = pd.read_csv(csv_file, usecols=[entry for entry in headers if entry not in ("filename",)])
         audio_features = data.drop('label', axis=1)
         labels = data["label"]
+        self.labels = labels
 
         if stratify:
             stratify_set = labels

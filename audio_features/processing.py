@@ -62,7 +62,7 @@ class AudioProcessing:
     def get_mel_spec(self, n_mels, frame_size=DEF_FRAME_SIZE, hop_size=DEF_HOP_SIZE):
         if self._mel_spec is None or self._prev_mel_frame != frame_size or self._prev_mel_hop != hop_size:
             self._mel_spec = librosa.feature.melspectrogram(self._signal, sr=self._sr, n_fft=frame_size,
-                                                            hop_length=hop_size, n_mels=n_mels)
+                                                            hop_length=hop_size, n_mels=n_mels, window="hamming")
 
             self._mel_spec = librosa.power_to_db(self._mel_spec)
 
