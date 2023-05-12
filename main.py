@@ -16,21 +16,25 @@ def file_handle(filename):
     audio_proc = af.AudioProcessing(filename)
     audio_features = af.AudioFeatures(audio_proc)
 
-    # features = audio_features.get_mfccs(n_mfcc=13, n_mels=88, delta=True, delta2=True, stat_funcs=("median", "square"))
+    features = audio_features.get_mfccs(n_mfcc=13, n_mels=88, delta=True, delta2=True, stat_funcs=("median", "square"))
     # features.update(audio_features.get_rhythm())
-    features = audio_features.get_rhythm()
-    features.update(audio_features.get_harmonic_change(stat_funcs=("median", "square",)))
+    # features.update(audio_features.get_harmonic_change(stat_funcs=("median", "square",)))
 
     return features, filename
 
 
-def generate_feature_set(csv_filename, genres, root):
+def generate_feature_set(csv_filename, genres, audios_root_dir, tracks_num=None):
     csv_writer = af.FeaturesCSVWriter(csv_filename)
 
     for genre in genres[:]:
         print("processing '{}' genre...".format(genre))
 
-        files = af.get_audios_by_genre(root, genre)[:]
+        files_ext = af.get_audios_by_genre(audios_root_dir, genre)[:]
+
+        if tracks_num is not None:
+            files = files_ext[:tracks_num]
+        else:
+            files = files_ext[:]
 
         pool = Pool()
         result = pool.map(file_handle, files)
@@ -99,25 +103,25 @@ def main():
 
     gtzan_genres = af.get_all_directories("gtzan")
 
-    csv_features = "gtzan_features"
-    generate_feature_set("gtzan_features", genres=gtzan_genres, root="gtzan")
+    csv_features = "gtzan_features_cluster"
+    generate_feature_set(csv_features, genres=gtzan_genres[:], audios_root_dir="gtzan")
     # classifier, _ = svm_classify(csv_features, kernel="linear", random_state=10, c_param=0.1405)
     print("features computing done")
 
-    print("calculate best linear SVM")
-    optimize_linear = minimize_scalar(get_optimize_c(features=csv_features, kernel="linear", rand_state=10), bounds=(0.005, 1), method='bounded')
-    linear_c = optimize_linear.x
-    _, score = svm_classify(csv_features, kernel="linear", random_state=10, c_param=linear_c, get_statistics=True,
-                            matrix_name="Confusion Matrix for linear SVM (BPM, harmonic change)", save_file=SAVE_FILE)
-    print("Linear SVM | F1 = {}, optimized C param: {}".format(score, linear_c))
-
-    print("calculate best RBF SVM")
-    optimize_rbf = minimize_scalar(get_optimize_c(features=csv_features, kernel="rbf", rand_state=10),
-                                   bounds=(1000, 10000), method='bounded')
-    rbf_c = optimize_rbf.x
-    _, score = svm_classify(csv_features, kernel="rbf", random_state=10, c_param=rbf_c, get_statistics=True,
-                            matrix_name="Confusion Matrix for RBF SVM (BPM, harmonic change)", save_file=SAVE_FILE)
-    print("RBF SVM | F1 = {}, optimized C param: {}".format(score, rbf_c))
+    # print("calculate best linear SVM")
+    # optimize_linear = minimize_scalar(get_optimize_c(features=csv_features, kernel="linear", rand_state=10), bounds=(0.005, 1), method='bounded')
+    # linear_c = optimize_linear.x
+    # _, score = svm_classify(csv_features, kernel="linear", random_state=10, c_param=linear_c, get_statistics=True,
+    #                         matrix_name="Confusion Matrix for linear SVM (BPM, harmonic change)", save_file=SAVE_FILE)
+    # print("Linear SVM | F1 = {}, optimized C param: {}".format(score, linear_c))
+    #
+    # print("calculate best RBF SVM")
+    # optimize_rbf = minimize_scalar(get_optimize_c(features=csv_features, kernel="rbf", rand_state=10),
+    #                                bounds=(1000, 10000), method='bounded')
+    # rbf_c = optimize_rbf.x
+    # _, score = svm_classify(csv_features, kernel="rbf", random_state=10, c_param=rbf_c, get_statistics=True,
+    #                         matrix_name="Confusion Matrix for RBF SVM (BPM, harmonic change)", save_file=SAVE_FILE)
+    # print("RBF SVM | F1 = {}, optimized C param: {}".format(score, rbf_c))
 
     #
     # svm_comparison()
